@@ -22,7 +22,7 @@ let secondsANDTicks = function(durationInSeconds) {
   const totalSeconds = Math.floor(durationInSeconds);
   let fraction = Math.abs(durationInSeconds - totalSeconds);
 
-  let ticks = Math.round(fraction * 40);
+  let ticks = Math.max(0, Math.round(fraction * 40)-1);
 
   if (ticks === 40) {
     return { seconds: totalSeconds + 1, ticks: 0 };
@@ -334,7 +334,7 @@ setTerminal("MIDI to Totebot Converter for Scrap Mechanic by Noiro1 (uses midi-p
 
 let commandsCheck = function(tex) {
     if (tex === "+help") {
-        appendTerminal("List of commands:<br>+importMIDI -- opens a window to import a MIDI file<br>+setTrackType(trackNum[0,1,2... etc.], totebotType[blip, bass, synth, percussion], totebotMode[retro, dance], maxVolume[0-100]) -- sets the head used for selected track and volume (default: synth, retro, 100 [0 to omit track entirely])<br>+exportBlueprint -- exports the MIDI file as a .json blueprint");
+        appendTerminal("List of commands:<br>+importMIDI -- opens a window to import a MIDI file<br>+setTempo(number) -- changes the MIDI's tempo (BPM)<br>+setTrackType(trackNum[0,1,2... etc.], totebotType[blip, bass, synth, percussion], totebotMode[retro, dance], maxVolume[0-100]) -- sets the head used for selected track and volume (default: synth, retro, 100 [0 to omit track entirely])<br>+exportBlueprint -- exports the MIDI file as a .json blueprint");
         return
     }
     if (tex === "+importMIDI") {
@@ -396,10 +396,53 @@ let commandsCheck = function(tex) {
                 if (k.Mode === 2) {
                     tbm = "Dance";
                 }
-                str = str + "Track "+v+" - "+k.Name+": Notes - "+k.NoteCount+", -- SM CONFIG: TotebotType - "+tbt+", TotebotMode - "+tbm+", MaxVolume - "+k.Volume+"%<br>";
+                str = str + "Track "+v+" - "+k.Name+": Tempo - "+k.Tempo+", Notes - "+k.NoteCount+", -- SM CONFIG: TotebotType - "+tbt+", TotebotMode - "+tbm+", MaxVolume - "+k.Volume+"%<br>";
             });
             appendTerminal(str+"<br>Changed Track "+query1+"'s config.");
             return
+        }
+    }
+    if (tex.includes("+setTempo(")) {
+        const regex = /\(([^)]+)\)/;
+        const matches = tex.match(regex);
+        if (matches) {
+            if (MIDI.track) {
+            let SPT = (60000000*matches[1])/(MIDI.timeDivision*1000000);
+            MIDI.track.forEach((k, v) => {
+                let track = {NoteEvents : []};
+                let absoluteTime = 0;
+                let activeNotes = {};
+                let lastOnset = 0;
+                k.event.forEach((ev, i) => {
+                    absoluteTime += ev.deltaTime;
+                        if (ev.type === 9 && ev.data[1] !== 0) {
+                        activeNotes[ev.data[0]] = {
+                            startTime: absoluteTime,
+                            velocity: ev.data[1]
+                        };
+
+                        } else if (ev.type === 8 || (ev.type === 9 && ev.data[1] === 0)) {
+                        const pitch = ev.data[0];
+                        const noteOn = activeNotes[pitch];
+                        if (noteOn) {
+                            const duration = absoluteTime - noteOn.startTime;
+                            const onsetGap = noteOn.startTime - lastOnset;
+                            track.NoteEvents.push({
+                                type: 0,
+                                tone: Math.round(1000*normalizeKey(ev.data[0]))/1000,
+                                timeSinceLast: onsetGap*SPT,
+                                duration: duration*SPT
+                            });
+                            lastOnset = noteOn.startTime;
+                            delete activeNotes[pitch];
+                        }
+                    }
+                });
+                config.tracks[v].NoteEvents = track.NoteEvents;
+            });
+            appendTerminal("Tempo changed to "+matches[1]+"BPM.")
+            return
+            }
         }
     }
     appendTerminal("Invalid command.")
@@ -413,7 +456,4 @@ inputB.addEventListener('keydown', function(event) {
       commandsCheck(inputB.value);
       inputB.value = "";
     }
-
 });
-
-
