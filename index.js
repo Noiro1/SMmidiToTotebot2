@@ -411,13 +411,11 @@ let commandsCheck = function(tex) {
         const regex = /\(([^)]+)\)/;
         const matches = tex.match(regex);
         if (matches && matches[1] != "") {
-            if (MIDI.track) {
             appendTerminal("Opened file selector with custom tempo of "+matches[1]+"BPM");
             LoadWithCustTemp = true;
             CustTemp = Number(matches[1]);
             uploadMIDI();
             return
-            }
         }
     }
     appendTerminal("Invalid command.")
@@ -432,3 +430,4 @@ inputB.addEventListener('keydown', function(event) {
       inputB.value = "";
     }
 });
+
