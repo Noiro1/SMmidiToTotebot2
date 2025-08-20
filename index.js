@@ -237,6 +237,7 @@ input.onchange = e => {
         let totalNotes = 0;
         let TEMPO = 0;
         let SPT = 0;
+        if (LoadWithCustTemp === true) {SPT = 60/(MIDI.timeDivision*CustTemp); TEMPO = CustTemp}
         config = {filename : "", tracks : []};
         if (MIDI.track) {
             MIDI.track.forEach((k, v) => {
@@ -251,7 +252,7 @@ input.onchange = e => {
                                 track.Name = ev.data;
                             }
                             if (ev.metaType === 81) {
-                                if (TEMPO === 0 && SPT === 0) {
+                                if (TEMPO === 0 && SPT === 0 && LoadWithCustTemp === false) {
                                 TEMPO = Math.round(60000000/ev.data);
                                 SPT = ev.data/(MIDI.timeDivision*1000000);
                                 }
@@ -332,14 +333,18 @@ let appendTerminal = function(Xtext) {
 
 setTerminal("MIDI to Totebot Converter for Scrap Mechanic by Noiro1 (uses midi-parser-js v4.0.4 at https://github.com/colxi/midi-parser-js for midi reading), +help for commands<br>")
 
+let LoadWithCustTemp = false;
+let CustTemp = 0;
+
 let commandsCheck = function(tex) {
     if (tex === "+help") {
-        appendTerminal("List of commands:<br>+importMIDI -- opens a window to import a MIDI file<br>+setTempo(number) -- changes the MIDI's tempo (BPM)<br>+setTrackType(trackNum[0,1,2... etc.], totebotType[blip, bass, synth, percussion], totebotMode[retro, dance], maxVolume[0-100]) -- sets the head used for selected track and volume (default: synth, retro, 100 [0 to omit track entirely])<br>+exportBlueprint -- exports the MIDI file as a .json blueprint");
+        appendTerminal("List of commands:<br>+importMIDI -- opens a window to import a MIDI file (alt: +importMIDI(tempo) -- import with custom tempo)<br>+setTrackType(trackNum[0,1,2... etc.], totebotType[blip, bass, synth, percussion], totebotMode[retro, dance], maxVolume[0-100]) -- sets the head used for selected track and volume (default: synth, retro, 100 [0 to omit track entirely])<br>+exportBlueprint -- exports the MIDI file as a .json blueprint");
         return
     }
     if (tex === "+importMIDI") {
         appendTerminal("Opened file selector.");
         uploadMIDI();
+        LoadWithCustTemp = false;
         return
     }
     if (tex === "+exportBlueprint") {
@@ -402,50 +407,15 @@ let commandsCheck = function(tex) {
             return
         }
     }
-    if (tex.includes("+setTempo(")) {
+    if (tex.includes("+importMIDI(")) {
         const regex = /\(([^)]+)\)/;
         const matches = tex.match(regex);
-        if (matches) {
+        if (matches && matches[1] != "") {
             if (MIDI.track) {
-            let SPT = 60/(MIDI.timeDivision*matches[1]);
-            MIDI.track.forEach((k, v) => {
-                let track = {NoteEvents : []};
-                let absoluteTime = 0;
-                let activeNotes = {};
-                let lastOnset = 0;
-                k.event.forEach((ev, i) => {
-                    absoluteTime += ev.deltaTime;
-                        if (ev.type === 9 && ev.data[1] !== 0) {
-                        activeNotes[ev.data[0]] = {
-                            startTime: absoluteTime,
-                            velocity: ev.data[1]
-                        };
-
-                        } else if (ev.type === 8 || (ev.type === 9 && ev.data[1] === 0)) {
-                        const pitch = ev.data[0];
-                        const noteOn = activeNotes[pitch];
-                        if (noteOn) {
-                            const duration = absoluteTime - noteOn.startTime;
-                            const onsetGap = noteOn.startTime - lastOnset;
-                            track.NoteEvents.push({
-                                type: 0,
-                                tone: Math.round(1000*normalizeKey(ev.data[0]))/1000,
-                                timeSinceLast: onsetGap*SPT,
-                                duration: duration*SPT
-                            });
-                            lastOnset = noteOn.startTime;
-                            delete activeNotes[pitch];
-                        }
-                    }
-                });
-                config.tracks[v].NoteEvents.forEach((i, p) => {
-                    config.tracks[v].NoteEvents.splice(p, 1);
-                });
-                track.NoteEvents.forEach((i, p) => {
-                    config.tracks[v].NoteEvents.push(i);
-                });
-            });
-            appendTerminal("Tempo changed to "+matches[1]+"BPM.")
+            appendTerminal("Opened file selector with custom tempo of "+matches[1]+"BPM");
+            LoadWithCustTemp = true;
+            CustTemp = Number(matches[1]);
+            uploadMIDI();
             return
             }
         }
@@ -462,4 +432,3 @@ inputB.addEventListener('keydown', function(event) {
       inputB.value = "";
     }
 });
-
