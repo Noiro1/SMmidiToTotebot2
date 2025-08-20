@@ -43,6 +43,7 @@ let autoTotebot = function(name) {
     if(name.toLowerCase().includes("jazz")) {bot = 2; mode = 1;}
     if(name.toLowerCase().includes("harp")) {bot = 2; mode = 2;}
     if(name.toLowerCase().includes("guitar")) {bot = 2; mode = 2;}
+    if(name.toLowerCase().includes("gtr")) {bot = 2; mode = 2;}
     if(name.toLowerCase().includes("harpsichord")) {bot = 1; mode = 1;}
     if(name.toLowerCase().includes("trombone")) {bot = 2; mode = 1;}
     if(name.toLowerCase().includes("lead")) {bot = 1; mode = 2;}
@@ -414,4 +415,5 @@ inputB.addEventListener('keydown', function(event) {
     }
 
 });
+
 
