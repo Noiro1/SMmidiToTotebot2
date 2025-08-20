@@ -407,7 +407,7 @@ let commandsCheck = function(tex) {
         const matches = tex.match(regex);
         if (matches) {
             if (MIDI.track) {
-            let SPT = (60000000*matches[1])/(MIDI.timeDivision*1000000);
+            let SPT = 60/(MIDI.timeDivision*matches[1]);
             MIDI.track.forEach((k, v) => {
                 let track = {NoteEvents : []};
                 let absoluteTime = 0;
@@ -438,7 +438,12 @@ let commandsCheck = function(tex) {
                         }
                     }
                 });
-                config.tracks[v].NoteEvents = track.NoteEvents;
+                config.tracks[v].NoteEvents.forEach((i, p) => {
+                    config.tracks[v].NoteEvents.splice(p, 1);
+                });
+                track.NoteEvents.forEach((i, p) => {
+                    config.tracks[v].NoteEvents.push(i);
+                });
             });
             appendTerminal("Tempo changed to "+matches[1]+"BPM.")
             return
@@ -457,3 +462,4 @@ inputB.addEventListener('keydown', function(event) {
       inputB.value = "";
     }
 });
+
