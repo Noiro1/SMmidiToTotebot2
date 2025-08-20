@@ -42,6 +42,7 @@ let autoTotebot = function(name) {
     if(name.toLowerCase().includes("sine")) {bot = 3; mode = 2;}
     if(name.toLowerCase().includes("jazz")) {bot = 2; mode = 1;}
     if(name.toLowerCase().includes("harp")) {bot = 2; mode = 2;}
+    if(name.toLowerCase().includes("guitar")) {bot = 2; mode = 2;}
     if(name.toLowerCase().includes("harpsichord")) {bot = 1; mode = 1;}
     if(name.toLowerCase().includes("trombone")) {bot = 2; mode = 1;}
     if(name.toLowerCase().includes("lead")) {bot = 1; mode = 2;}
@@ -394,7 +395,7 @@ let commandsCheck = function(tex) {
                 if (k.Mode === 2) {
                     tbm = "Dance";
                 }
-                str = str + "Track "+v+" - "+k.Name+": Tempo - "+k.Tempo+", Notes - "+k.NoteCount+", -- SM CONFIG: TotebotType - "+tbt+", TotebotMode - "+tbm+", MaxVolume - "+k.Volume+"%<br>";
+                str = str + "Track "+v+" - "+k.Name+": Notes - "+k.NoteCount+", -- SM CONFIG: TotebotType - "+tbt+", TotebotMode - "+tbm+", MaxVolume - "+k.Volume+"%<br>";
             });
             appendTerminal(str+"<br>Changed Track "+query1+"'s config.");
             return
@@ -413,3 +414,4 @@ inputB.addEventListener('keydown', function(event) {
     }
 
 });
+
